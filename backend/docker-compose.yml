@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # API Service (Your Express App)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./.env
+    environment:
+      # Use MongoDB URL from .env (Atlas or any external MongoDB)
+      - MONGODB_URL=${MONGODB_URL}
+      - CHROMA_URL=http://chroma:8000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - chroma
+    networks:
+      - app-network
+
+  # ChromaDB Service
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - app-network
+
+# Define the network
+networks:
+  app-network:
+    driver: bridge
+
+# Define the volume for data persistence
+volumes:
+  chroma-data:

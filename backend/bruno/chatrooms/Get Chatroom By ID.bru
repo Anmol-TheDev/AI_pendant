@@ -1,0 +1,78 @@
+meta {
+  name: Get Chatroom By ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/chatrooms/6967cb20036951bf7420593a
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:4000
+}
+
+docs {
+  # Get Chatroom By ID
+  
+  Retrieves a specific chatroom by its MongoDB ObjectId.
+  
+  ## Path Parameters
+  
+  - **chatroomId** (required) - MongoDB ObjectId of the chatroom
+    - Format: 24-character hexadecimal string
+    - Example: `679c1234567890abcdef1234`
+  
+  ## Response
+  
+  Returns chatroom details or 404 if not found.
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "success": true,
+    "message": "Successfully fetched Chatroom.",
+    "data": {
+      "id": "679c1234567890abcdef1234",
+      "name": "Daily Chat - 2026-01-11",
+      "description": "Chatroom for 2026-01-11",
+      "date": "2026-01-11T00:00:00.000Z",
+      "isActive": true,
+      "stats": {
+        "totalMessages": 42,
+        "lastMessageAt": "2026-01-11T15:30:45.123Z",
+        "participantCount": 5
+      }
+    }
+  }
+  ```
+  
+  ### Error Response (404)
+  
+  ```json
+  {
+    "success": false,
+    "message": "Chatroom not found"
+  }
+  ```
+  
+  ## Use Cases
+  
+  - Retrieve specific chatroom details
+  - Check if a chatroom exists
+  - Get chatroom statistics
+  - Verify chatroom access before connecting
+  
+  ## Notes
+  
+  - Returns 404 if chatroom doesn't exist
+  - Returns 400 if chatroomId is invalid format
+  - No authentication required
+}

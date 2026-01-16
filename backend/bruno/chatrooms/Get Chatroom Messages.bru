@@ -1,0 +1,98 @@
+meta {
+  name: Get Chatroom Messages
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/chatrooms/:chatroomId/messages?limit=50
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 50
+}
+
+params:path {
+  chatroomId: 679c1234567890abcdef1234
+}
+
+headers {
+  Content-Type: application/json
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:4000
+}
+
+docs {
+  # Get Chatroom Messages (Simple)
+  
+  Retrieves the most recent messages from a chatroom. This is a simple endpoint that returns the latest messages without pagination support.
+  
+  **Note**: For infinite scroll and pagination, use the `/messages/paginated` endpoint instead.
+  
+  ## Path Parameters
+  
+  - **chatroomId** (required) - MongoDB ObjectId of the chatroom
+    - Example: `679c1234567890abcdef1234`
+  
+  ## Query Parameters
+  
+  - **limit** (optional) - Maximum number of messages to retrieve
+    - Default: `50`
+    - Range: 1-100
+    - Example: `?limit=20`
+  
+  ## Response
+  
+  Returns an array of messages in reverse chronological order (newest first).
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "success": true,
+    "message": "Successfully fetched Messages.",
+    "data": [
+      {
+        "id": "679c5678901234abcdef5678",
+        "content": "Hello, AI! How are you?",
+        "messageType": "user",
+        "createdAt": "2026-01-11T15:30:45.123Z"
+      },
+      {
+        "id": "679c5678901234abcdef5679",
+        "content": "Hello! I'm doing great, thank you for asking. How can I help you today?",
+        "messageType": "system",
+        "createdAt": "2026-01-11T15:30:48.456Z"
+      }
+    ]
+  }
+  ```
+  
+  ## Message Types
+  
+  - **user** - Message from a user
+  - **system** - Message from AI assistant
+  - **transcription** - Message from audio transcription
+  
+  ## Use Cases
+  
+  - Quick fetch of recent messages
+  - Initial message load
+  - Simple chat history display
+  - Testing and debugging
+  
+  ## Limitations
+  
+  - No pagination support
+  - Cannot load older messages beyond limit
+  - Not suitable for infinite scroll
+  
+  ## Recommendation
+  
+  For production applications with many messages, use the paginated endpoint:
+  `GET /api/chatrooms/:chatroomId/messages/paginated`
+}

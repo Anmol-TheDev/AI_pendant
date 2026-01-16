@@ -1,0 +1,196 @@
+meta {
+  name: Get Paginated Messages
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/chatrooms/:chatroomId/messages/paginated?limit=50&cursor=
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 50
+  cursor: ~
+}
+
+params:path {
+  chatroomId: 679c1234567890abcdef1234
+}
+
+headers {
+  Content-Type: application/json
+}
+
+docs {
+  # Get Paginated Messages (Infinite Scroll)
+  
+  Retrieves messages from a chatroom with cursor-based pagination, perfect for implementing infinite scroll in chat applications.
+  
+  ## Path Parameters
+  
+  - **chatroomId** (required) - MongoDB ObjectId of the chatroom
+    - Example: `679c1234567890abcdef1234`
+  
+  ## Query Parameters
+  
+  - **limit** (optional) - Number of messages to retrieve per page
+    - Default: `50`
+    - Range: 1-100
+    - Example: `?limit=30`
+  
+  - **cursor** (optional) - Message ID to paginate from
+    - Omit for first page (most recent messages)
+    - Use `nextCursor` from previous response for subsequent pages
+    - Example: `?cursor=679c5678901234abcdef5678`
+  
+  ## Response
+  
+  Returns messages in **chronological order** (oldest first) for easy display.
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "success": true,
+    "message": "Successfully fetched Messages.",
+    "data": {
+      "messages": [
+        {
+          "id": "679c5678901234abcdef5678",
+          "content": "Hello, AI!",
+          "messageType": "user",
+          "createdAt": "2026-01-11T15:30:45.123Z"
+        },
+        {
+          "id": "679c5678901234abcdef5679",
+          "content": "Hello! How can I help you?",
+          "messageType": "system",
+          "createdAt": "2026-01-11T15:30:48.456Z"
+        }
+      ],
+      "pagination": {
+        "hasMore": true,
+        "nextCursor": "679c5678901234abcdef5670",
+        "totalCount": 250,
+        "currentCount": 50
+      }
+    }
+  }
+  ```
+  
+  ## Pagination Fields
+  
+  - **hasMore** - Boolean indicating if more messages exist
+  - **nextCursor** - Cursor for next page (null if no more messages)
+  - **totalCount** - Total number of messages in chatroom
+  - **currentCount** - Number of messages in current response
+  
+  ## Usage Flow for Infinite Scroll
+  
+  ### Step 1: Initial Load (Most Recent Messages)
+  ```
+  GET /api/chatrooms/123/messages/paginated?limit=50
+  ```
+  
+  Response:
+  ```json
+  {
+    "messages": [...50 most recent messages...],
+    "pagination": {
+      "hasMore": true,
+      "nextCursor": "msg_abc123"
+    }
+  }
+  ```
+  
+  ### Step 2: Load Older Messages
+  ```
+  GET /api/chatrooms/123/messages/paginated?limit=50&cursor=msg_abc123
+  ```
+  
+  Response:
+  ```json
+  {
+    "messages": [...next 50 older messages...],
+    "pagination": {
+      "hasMore": true,
+      "nextCursor": "msg_def456"
+    }
+  }
+  ```
+  
+  ### Step 3: Continue Until End
+  ```
+  GET /api/chatrooms/123/messages/paginated?limit=50&cursor=msg_def456
+  ```
+  
+  Response:
+  ```json
+  {
+    "messages": [...remaining messages...],
+    "pagination": {
+      "hasMore": false,
+      "nextCursor": null
+    }
+  }
+  ```
+  
+  ## Implementation Tips
+  
+  ### Frontend (React Example)
+  
+  ```typescript
+  const [messages, setMessages] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  
+  const loadMore = async () => {
+    const url = cursor 
+      ? `/api/chatrooms/${id}/messages/paginated?cursor=${cursor}`
+      : `/api/chatrooms/${id}/messages/paginated`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Prepend older messages
+    setMessages(prev => [...data.data.messages, ...prev]);
+    setCursor(data.data.pagination.nextCursor);
+    setHasMore(data.data.pagination.hasMore);
+  };
+  
+  // Trigger on scroll to top
+  const handleScroll = () => {
+    if (scrollTop < 100 && hasMore) {
+      loadMore();
+    }
+  };
+  ```
+  
+  ## Message Order
+  
+  - **API Response**: Chronological order (oldest → newest)
+  - **Display**: Render top to bottom (oldest at top, newest at bottom)
+  - **Pagination**: Load older messages by scrolling up
+  
+  ## Performance
+  
+  - Uses indexed queries for fast retrieval
+  - Cursor-based pagination prevents duplicate/missing messages
+  - Efficient for large message histories (1000+ messages)
+  - No offset-based pagination issues
+  
+  ## Use Cases
+  
+  - Infinite scroll chat interface
+  - WhatsApp-style message loading
+  - Telegram-style chat history
+  - ChatGPT-style conversation view
+  - Mobile chat applications
+  
+  ## Related Endpoints
+  
+  - Simple messages: `GET /api/chatrooms/:id/messages`
+  - Socket.IO event: `messages:loadMore` (real-time alternative)
+}

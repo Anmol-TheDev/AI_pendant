@@ -1,0 +1,119 @@
+meta {
+  name: Get All Chatrooms
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/chatrooms?page=1&limit=20
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 20
+}
+
+headers {
+  Content-Type: application/json
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:4000
+}
+
+docs {
+  # Get All Chatrooms
+  
+  Retrieves all active chatrooms with last message preview and statistics.
+  
+  ## Query Parameters
+  
+  - **page** (optional) - Page number for pagination
+    - Default: `1`
+    - Minimum: `1`
+    - Example: `?page=2`
+  
+  - **limit** (optional) - Number of chatrooms per page
+    - Default: `20`
+    - Range: 1-100
+    - Example: `?limit=10`
+  
+  ## Response
+  
+  Returns a paginated list of chatrooms with last message preview.
+  
+  ### Success Response (200)
+  
+  ```json
+  {
+    "success": true,
+    "message": "Successfully fetched Chatrooms.",
+    "data": {
+      "chatrooms": [
+        {
+          "id": "679c1234567890abcdef1234",
+          "name": "Daily Chat - 2026-01-11",
+          "description": "Chatroom for 2026-01-11",
+          "date": "2026-01-11T00:00:00.000Z",
+          "isActive": true,
+          "stats": {
+            "totalMessages": 42,
+            "lastMessageAt": "2026-01-11T15:30:45.123Z",
+            "participantCount": 5
+          },
+          "lastMessage": {
+            "id": "679c5678901234abcdef5679",
+            "content": "That's a great question! Let me explain...",
+            "messageType": "system",
+            "createdAt": "2026-01-11T15:30:45.123Z"
+          }
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 45,
+        "hasMore": true
+      }
+    }
+  }
+  ```
+  
+  ## Response Fields
+  
+  ### Chatroom Object
+  
+  - **id** - Unique chatroom identifier
+  - **name** - Chatroom name
+  - **description** - Brief description
+  - **date** - Date of the chatroom
+  - **isActive** - Whether chatroom is active
+  - **stats** - Statistics object
+    - totalMessages - Total message count
+    - lastMessageAt - Timestamp of last message
+    - participantCount - Number of participants
+  - **lastMessage** - Preview of last message (null if no messages)
+    - id - Message ID
+    - content - Message text
+    - messageType - Type (user/system/transcription)
+    - createdAt - Message timestamp
+  
+  ### Pagination Object
+  
+  - **page** - Current page number
+  - **limit** - Items per page
+  - **total** - Total number of chatrooms
+  - **hasMore** - Boolean indicating if more pages exist
+  
+  ## Sorting
+  
+  Chatrooms are sorted by **last message timestamp** (most recent first).
+  
+  ## Notes
+  
+  - No authentication required
+  - Only returns active chatrooms (isActive: true)
+  - Empty chatrooms (no messages) will have lastMessage: null
+}

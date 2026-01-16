@@ -1,0 +1,72 @@
+meta {
+  name: Get Today Chatroom
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/chatrooms/today
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:4000
+}
+
+docs {
+  # Get Today's Chatroom
+  
+  Retrieves or creates the chatroom for the current day. Each day has a unique chatroom that is automatically created when first accessed.
+  
+  ## Response
+  
+  Returns chatroom details including:
+  - **id** - Unique chatroom identifier
+  - **name** - Chatroom name (e.g., "Daily Chat - 2026-01-11")
+  - **description** - Brief description
+  - **date** - Date of the chatroom (start of day)
+  - **isActive** - Whether the chatroom is currently active
+  - **stats** - Statistics object
+    - totalMessages - Total number of messages
+    - lastMessageAt - Timestamp of last message
+    - participantCount - Number of unique participants
+  
+  ## Example Response
+  
+  ```json
+  {
+    "success": true,
+    "message": "Successfully fetched Chatroom.",
+    "data": {
+      "id": "679c1234567890abcdef1234",
+      "name": "Daily Chat - 2026-01-11",
+      "description": "Chatroom for 2026-01-11",
+      "date": "2026-01-11T00:00:00.000Z",
+      "isActive": true,
+      "stats": {
+        "totalMessages": 42,
+        "lastMessageAt": "2026-01-11T15:30:45.123Z",
+        "participantCount": 5
+      }
+    }
+  }
+  ```
+  
+  ## Use Cases
+  
+  - Get the current active chatroom for today
+  - Check if a chatroom exists for today
+  - Retrieve chatroom ID for Socket.IO connection
+  - Display chatroom statistics
+  
+  ## Notes
+  
+  - Chatrooms are created automatically if they don't exist
+  - One chatroom per day (based on UTC date)
+  - No authentication required
+}
