@@ -1,0 +1,55 @@
+meta {
+  name: Backend Callback Example
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{backend_url}}/api/transcripts/ingest
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": "I went to the gym this morning and had a great workout. Feeling energized and ready for the day!",
+    "timestamp": "2026-01-14T08:15:00.000Z",
+    "chunkNumber": 1
+  }
+}
+
+docs {
+  # Backend Callback Example
+  
+  This is the payload that the transcription service sends to your backend after successful transcription.
+  
+  ## Payload Fields
+  - **text** (string): The transcribed text from ElevenLabs API
+  - **timestamp** (string): Original timestamp from the request (ISO 8601 format)
+  - **chunkNumber** (integer): The sequence number of the processed chunk
+  
+  ## Retry Logic
+  - Retries up to 3 times on failure
+  - Exponential backoff: 1s, 2s, 4s
+  - Logs all retry attempts
+  
+  ## Your Backend Should
+  - Accept POST requests at `/api/transcripts/ingest`
+  - Return 2xx status code on success
+  - Handle duplicate chunkNumbers (idempotency)
+  
+  ## Example Response
+  Your backend should return a success response like:
+  ```json
+  {
+    "success": true,
+    "message": "Transcript ingested successfully"
+  }
+  ```
+}
+
+tests {
+  test("Status is 2xx", function() {
+    expect(res.status).to.be.within(200, 299);
+  });
+}
