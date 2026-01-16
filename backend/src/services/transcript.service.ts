@@ -57,8 +57,7 @@ export async function ingestTranscript(input: IngestInput): Promise<IngestResult
   logger.info('Ingesting transcript chunk', { timestamp, hour, chunkNumber });
 
   try {
-    // Step 1: Resolve chatroom (create if needed) - single user system
-    // Using a default userId for single-user system
+    // Step 1: Resolve chatroom (create if needed) - automatically based on timestamp
     const defaultUserId = new mongoose.Types.ObjectId('000000000000000000000000');
     const chatroom = await TranscriptChatroom.getOrCreateForTimestamp(defaultUserId.toString(), timestamp);
 

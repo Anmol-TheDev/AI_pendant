@@ -67,18 +67,27 @@ Authorization: Bearer {{clerkToken}}
 The transcript system provides a scalable backend for storing continuous transcript text, segmented by day/hour, with semantic AI querying capabilities using MongoDB + Vector DB.
 
 **Key Features:**
-- Automatic daily chatroom creation (1 per user per day)
-- Hour-based segment organization (0-23)
-- NLP analysis (sentiment + topics)
-- Vector embeddings for semantic search
-- AI-powered daily and weekly summaries
+- **Automatic chatroom creation** - No manual setup needed, just send transcripts with timestamps
+- **24-hour windows** - Each chatroom represents a 24-hour period ("Day 1", "Day 2", etc.)
+- **Hour-based segments** - Automatic organization into hourly buckets (0-23)
+- **NLP analysis** - Automatic sentiment detection and topic extraction
+- **Vector embeddings** - Semantic search powered by ChromaDB
+- **AI-powered summaries** - Daily and weekly summaries using Gemini AI
 
 **Data Flow:**
-1. External transcription service sends chunks via `/ingest`
-2. System creates/resolves chatroom and segment
-3. Runs NLP analysis and generates embeddings
-4. Stores in MongoDB + Vector DB
-5. Updates statistics and metadata
+1. External transcription service sends chunks via `/ingest` with timestamp
+2. System automatically creates/finds appropriate 24-hour chatroom
+3. Creates/finds hourly segment within chatroom
+4. Runs NLP analysis and generates embeddings
+5. Stores in MongoDB + ChromaDB (optional)
+6. Updates statistics and metadata
+
+**Chatroom Management:**
+- **Automatic creation** - First transcript creates "Day 1", next day creates "Day 2", etc.
+- **Smart detection** - System finds existing chatroom for timestamp or creates new one
+- **No manual intervention** - Backend handles all chatroom lifecycle
+- **Sequential organization** - Chatrooms are numbered sequentially (1, 2, 3...)
+- **24-hour windows** - Each chatroom spans exactly 24 hours from first transcript
 
 ### Authentication Endpoints
 
@@ -197,17 +206,46 @@ Content-Type: application/json
 ### Transcript Endpoints
 
 See the `transcripts` folder for detailed documentation on:
-- Ingesting transcript chunks
-- Retrieving daily/hourly context
-- Semantic search capabilities
-- Finding similar events
-- Generating AI summaries
+- **Ingesting transcript chunks** - Automatic chatroom creation based on timestamps
+- **Retrieving daily/hourly context** - Query transcripts by day or hour
+- **Semantic search capabilities** - Vector-based search across all transcripts
+- **Finding similar events** - Discover related transcript chunks
+- **Generating AI summaries** - Daily and weekly summaries powered by Gemini AI
 
 **Quick Start:**
-1. Ingest transcript chunks via `POST /api/transcripts/ingest`
-2. Query context via `GET /api/transcripts/context/daily`
-3. Search semantically via `GET /api/transcripts/context/search`
-4. Generate summaries via `GET /api/transcripts/summary/daily`
+1. **Ingest transcripts** - `POST /api/transcripts/ingest` with text and timestamp
+   - Backend automatically creates "Day 1", "Day 2", etc. based on timestamps
+   - No need to manually create chatrooms!
+2. **Query context** - `GET /api/transcripts/context/daily?dayNumber=1`
+3. **Search semantically** - `GET /api/transcripts/context/search?query=gym`
+4. **Generate summaries** - `GET /api/transcripts/summary/daily?dayNumber=1`
+
+**Example Workflow:**
+```bash
+# Day 1 - First transcript (creates "Day 1" automatically)
+POST /api/transcripts/ingest
+{
+  "text": "Started gym again after months. Weighed 72.9kg.",
+  "timestamp": "2026-01-14T08:15:00.000Z"
+}
+
+# Day 1 - Another transcript (uses same "Day 1")
+POST /api/transcripts/ingest
+{
+  "text": "Had protein shake after workout.",
+  "timestamp": "2026-01-14T09:30:00.000Z"
+}
+
+# Day 2 - Next day (creates "Day 2" automatically)
+POST /api/transcripts/ingest
+{
+  "text": "Morning weight: 72.5kg. Lost 400g!",
+  "timestamp": "2026-01-15T08:00:00.000Z"
+}
+
+# Query Day 1 transcripts
+GET /api/transcripts/context/daily?dayNumber=1
+```
 
 ## 🔧 Environment Variables
 
@@ -228,7 +266,27 @@ CLERK_WEBHOOK_SECRET=whsec_your_secret_here
 
 # Gemini AI (for NLP and summaries)
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# ChromaDB (optional - for vector search)
+CHROMA_URL=http://localhost:8000
+CHROMA_COLLECTION=audio_chunks
 ```
+
+## 🛠️ Utility Scripts
+
+The backend includes helpful scripts for managing transcript data:
+
+### Check Chatrooms
+```bash
+npm run check:chatrooms
+```
+View all chatrooms and transcript chunks in the database. Useful for debugging and verifying data.
+
+### Cleanup Invalid Chatrooms
+```bash
+npm run cleanup:chatrooms
+```
+Remove corrupted chatrooms with invalid `dayNumber` values. Run this if you encounter validation errors.
 
 ## ✅ Testing
 

@@ -17,12 +17,16 @@ export const sanitizeInput = (
 
   // Sanitize query parameters
   if (req.query && Object.keys(req.query).length > 0) {
-    req.query = sanitizeObject(req.query) as ParsedQs;
+    const sanitized = sanitizeObject(req.query) as ParsedQs;
+    Object.keys(req.query).forEach(key => delete req.query[key]);
+    Object.assign(req.query, sanitized);
   }
 
   // Sanitize URL parameters
   if (req.params && Object.keys(req.params).length > 0) {
-    req.params = sanitizeObject(req.params) as Record<string, string>;
+    const sanitized = sanitizeObject(req.params) as Record<string, string>;
+    Object.keys(req.params).forEach(key => delete req.params[key]);
+    Object.assign(req.params, sanitized);
   }
 
   next();

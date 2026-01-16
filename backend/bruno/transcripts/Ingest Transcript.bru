@@ -12,7 +12,7 @@ post {
 
 body:json {
   {
-    "text": "I went to the gym this morning and had a great workout. Feeling energized and ready for the day!",
+    "text": "Started gym again after months. Weighed 72.9kg in the morning.",
     "timestamp": "2026-01-14T08:15:00.000Z",
     "chunkNumber": 1
   }
@@ -41,25 +41,39 @@ docs {
   
   **Endpoint:** `POST /api/transcripts/ingest`
   
-  Ingests a transcript chunk (10-20 seconds of text) from an external transcription service.
+  Ingests a transcript chunk (10-20 seconds of text) from an external transcription service. The system automatically creates and manages chatrooms based on timestamps.
   
   ## Request Body
   
   | Field | Type | Required | Description |
   |-------|------|----------|-------------|
-  | text | string | Yes | Transcript text (max 5000 chars) |
+  | text | string | Yes | Transcript text (1-5000 chars) |
   | timestamp | string (ISO 8601) | Yes | Time when the audio was recorded |
-  | chunkNumber | number | No | Optional sequential chunk number |
+  | chunkNumber | number | No | Optional sequential chunk number for ordering |
+  
+  ## Automatic Chatroom Management
+  
+  **The backend automatically handles chatroom creation based on timestamps:**
+  
+  - **No manual chatroom creation needed** - Just send the transcript with a timestamp
+  - **24-hour windows** - Each chatroom represents a 24-hour period
+  - **Sequential naming** - Chatrooms are named "Day 1", "Day 2", "Day 3", etc.
+  - **Smart detection** - System finds existing chatroom or creates new one
+  
+  **Example Flow:**
+  1. First transcript at `2026-01-14T08:15:00Z` → Creates "Day 1" (24h window)
+  2. Another transcript at `2026-01-14T15:30:00Z` → Uses same "Day 1"
+  3. Transcript at `2026-01-15T09:00:00Z` → Creates "Day 2" (new 24h window)
   
   ## Process Flow
   
-  1. Resolves/creates daily chatroom
-  2. Resolves/creates hourly segment bucket
-  3. Runs NLP analysis (sentiment + topics)
-  4. Generates embedding vector
-  5. Stores chunk in MongoDB
-  6. Stores embedding in ChromaDB
-  7. Updates segment statistics
+  1. **Resolve/Create Chatroom** - Automatically finds or creates 24-hour chatroom
+  2. **Resolve/Create Segment** - Creates hourly segment bucket (0-23)
+  3. **NLP Analysis** - Extracts sentiment (positive/neutral/negative) and topics
+  4. **Generate Embedding** - Creates vector embedding for semantic search
+  5. **Store in MongoDB** - Saves chunk with all metadata
+  6. **Store in ChromaDB** - Saves embedding for vector search (optional)
+  7. **Update Statistics** - Updates segment and chatroom stats
   
   ## Response
   
@@ -77,12 +91,73 @@ docs {
   }
   ```
   
+  ## Example Requests
+  
+  ### First Transcript (Creates "Day 1")
+  ```json
+  {
+    "text": "Started gym again after months. Weighed 72.9kg in the morning.",
+    "timestamp": "2026-01-14T08:15:00.000Z",
+    "chunkNumber": 1
+  }
+  ```
+  
+  ### Same Day (Uses "Day 1")
+  ```json
+  {
+    "text": "Had a protein shake after workout. Feeling good!",
+    "timestamp": "2026-01-14T09:30:00.000Z",
+    "chunkNumber": 2
+  }
+  ```
+  
+  ### Next Day (Creates "Day 2")
+  ```json
+  {
+    "text": "Morning weight: 72.5kg. Lost 400g!",
+    "timestamp": "2026-01-15T08:00:00.000Z",
+    "chunkNumber": 3
+  }
+  ```
+  
   ## Notes
   
-  - No authentication required (single user system)
-  - Automatically creates chatroom (1 per day)
-  - Automatically creates segment (1 per hour)
-  - Sentiment: positive, neutral, or negative
-  - Topics: extracted using NLP/LLM
-  - ChunkNumber is optional but recommended for ordering
+  - **No authentication required** - Single user system (default userId: `000000000000000000000000`)
+  - **Automatic organization** - Chatrooms and segments created automatically
+  - **Flexible timestamps** - Can ingest transcripts in any order
+  - **ChromaDB optional** - If ChromaDB is not running, system logs warning but continues
+  - **NLP powered** - Uses Gemini AI with fallback to keyword matching
+  - **Sentiment analysis** - Automatically detects positive, neutral, or negative sentiment
+  - **Topic extraction** - Automatically extracts 1-5 main topics from text
+  
+  ## Error Responses
+  
+  ### 400 Bad Request - Invalid Input
+  ```json
+  {
+    "success": false,
+    "message": "Validation error",
+    "errors": [
+      {
+        "field": "text",
+        "message": "text is required"
+      }
+    ]
+  }
+  ```
+  
+  ### 500 Internal Server Error
+  ```json
+  {
+    "success": false,
+    "message": "An unexpected error occurred on the server."
+  }
+  ```
+  
+  ## Troubleshooting
+  
+  - **Chatroom not created?** - Run `npm run check:chatrooms` to verify database
+  - **Invalid dayNumber errors?** - Run `npm run cleanup:chatrooms` to remove corrupted data
+  - **ChromaDB warnings?** - Optional service, system continues without it
+  - **Gemini API errors?** - Falls back to keyword-based NLP analysis
 }

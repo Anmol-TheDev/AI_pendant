@@ -87,16 +87,26 @@ TranscriptChatroomSchema.statics.getOrCreateForTimestamp = async function (
     dayNumber = 1;
     startTime = timestamp;
   } else {
+    // Ensure lastChatroom.dayNumber is a valid number
+    const lastDayNumber = typeof lastChatroom.dayNumber === 'number' && !isNaN(lastChatroom.dayNumber) 
+      ? lastChatroom.dayNumber 
+      : 0;
+    
     // Check if timestamp is after the last chatroom's end time
     if (timestamp >= lastChatroom.endTime) {
-      dayNumber = lastChatroom.dayNumber + 1;
+      dayNumber = lastDayNumber + 1;
       startTime = lastChatroom.endTime;
     } else {
       // Timestamp is before the last chatroom - this shouldn't happen in normal flow
       // but handle it by creating a new chatroom anyway
-      dayNumber = lastChatroom.dayNumber + 1;
+      dayNumber = lastDayNumber + 1;
       startTime = timestamp;
     }
+  }
+
+  // Final validation to ensure dayNumber is valid
+  if (!dayNumber || isNaN(dayNumber) || dayNumber < 1) {
+    throw new Error(`Invalid dayNumber calculated: ${dayNumber}. LastChatroom: ${JSON.stringify(lastChatroom)}`);
   }
 
   const endTime = new Date(startTime.getTime() + 24 * 60 * 60 * 1000); // +24 hours

@@ -13,7 +13,9 @@
     "format:check": "prettier --check .",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "cleanup:chatrooms": "ts-node scripts/cleanup-invalid-chatrooms.ts",
+    "check:chatrooms": "ts-node scripts/check-chatrooms.ts"
   },
   "keywords": [],
   "author": "",

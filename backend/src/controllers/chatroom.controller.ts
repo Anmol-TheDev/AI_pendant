@@ -163,8 +163,9 @@ export const enterChatroom = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { userId, message } = req.body;
+    const messageLimit = parseInt(req.query.limit as string) || 50;
 
-    const result = await chatroomService.enterChatroom(id as string, userId);
+    const result = await chatroomService.enterChatroom(id as string, userId, messageLimit);
 
     // Build system prompt with context
     let systemPrompt = `You are a helpful AI assistant in a daily chatroom.`;
@@ -220,6 +221,14 @@ ${result.transcriptContext}`;
           isActive: result.chatroom.isActive,
           stats: result.chatroom.stats,
         },
+        messages: result.messages.map(msg => ({
+          id: msg._id,
+          content: msg.content,
+          messageType: msg.messageType,
+          userId: msg.userId,
+          createdAt: msg.createdAt,
+        })),
+        transcripts: result.transcripts,
         context: {
           hasContext: result.contextSummary.hasContext,
           totalChunks: result.contextSummary.totalChunks,

@@ -239,13 +239,21 @@ export const getConversationHistory = async (
 };
 
 /**
- * Enter chatroom and get transcript context for that day
+ * Enter chatroom and get transcript context + messages for that day
  */
 export const enterChatroom = async (
   chatroomId: string,
-  userId?: string
+  userId?: string,
+  messageLimit: number = 50
 ): Promise<{
   chatroom: IChatroom;
+  messages: IChatMessage[];
+  transcripts: Array<{
+    text: string;
+    timestamp: Date;
+    sentiment: string;
+    topics: string[];
+  }>;
   transcriptContext: string | null;
   contextSummary: {
     hasContext: boolean;
@@ -260,10 +268,15 @@ export const enterChatroom = async (
     throw new Error('Chatroom not found');
   }
 
+  // Get recent messages from the chatroom
+  const messages = await getRecentMessages(chatroomId, messageLimit);
+
   // If no userId provided, return chatroom without transcript context
   if (!userId) {
     return {
       chatroom,
+      messages: messages.reverse(), // Reverse to chronological order
+      transcripts: [],
       transcriptContext: null,
       contextSummary: {
         hasContext: false,
@@ -278,6 +291,8 @@ export const enterChatroom = async (
     logger.warn('Invalid userId format, skipping transcript context', { userId });
     return {
       chatroom,
+      messages: messages.reverse(),
+      transcripts: [],
       transcriptContext: null,
       contextSummary: {
         hasContext: false,
@@ -309,6 +324,8 @@ export const enterChatroom = async (
     logger.info('No transcript context found for chatroom', { chatroomId });
     return {
       chatroom,
+      messages: messages.reverse(),
+      transcripts: [],
       transcriptContext: null,
       contextSummary: {
         hasContext: false,
@@ -326,6 +343,8 @@ export const enterChatroom = async (
   if (segments.length === 0) {
     return {
       chatroom,
+      messages: messages.reverse(),
+      transcripts: [],
       transcriptContext: null,
       contextSummary: {
         hasContext: false,
@@ -335,13 +354,19 @@ export const enterChatroom = async (
     };
   }
 
-  // Build transcript context
+  // Build transcript context and collect transcript chunks
   let contextText = `# Transcript Context for ${chatroom.name}\n\n`;
   contextText += `Date: ${chatroomDate.toISOString().split('T')[0]}\n`;
   contextText += `Transcript Period: ${transcriptChatroom.name} (${transcriptChatroom.startTime.toISOString()} to ${transcriptChatroom.endTime.toISOString()})\n\n`;
 
   let totalChunks = 0;
   let totalWords = 0;
+  const transcripts: Array<{
+    text: string;
+    timestamp: Date;
+    sentiment: string;
+    topics: string[];
+  }> = [];
 
   for (const segment of segments) {
     const chunks = await TranscriptChunk.find({ segmentId: segment._id })
@@ -357,6 +382,14 @@ export const enterChatroom = async (
       contextText += `[${time}] ${chunk.text}\n`;
       totalChunks++;
       totalWords += chunk.text.split(/\s+/).length;
+
+      // Add to transcripts array
+      transcripts.push({
+        text: chunk.text,
+        timestamp: chunk.timestamp,
+        sentiment: chunk.sentiment,
+        topics: chunk.topics,
+      });
     }
 
     contextText += `\n`;
@@ -370,6 +403,8 @@ export const enterChatroom = async (
 
   return {
     chatroom,
+    messages: messages.reverse(), // Reverse to chronological order
+    transcripts,
     transcriptContext: contextText,
     contextSummary: {
       hasContext: true,
