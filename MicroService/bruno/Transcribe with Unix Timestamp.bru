@@ -1,0 +1,43 @@
+meta {
+  name: Transcribe with Unix Timestamp
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/transcribe-chunk
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  audio_file: @file(/path/to/audio.mp3)
+  chunk_number: 3
+  time: 1705142400
+}
+
+docs {
+  # Transcribe with Unix Timestamp
+  
+  Example using Unix timestamp instead of ISO 8601 format.
+  
+  ## Supported Audio Formats
+  - WAV (recommended)
+  - MP3
+  - M4A
+  - FLAC
+  - OGG
+  - Any format supported by soundfile/ffmpeg
+  
+  ## Audio Processing
+  - Automatically converts to mono
+  - Resamples to 16kHz
+  - Applies noise reduction
+  - Removes silence
+}
+
+tests {
+  test("Status is 202", function() {
+    expect(res.status).to.equal(202);
+  });
+}

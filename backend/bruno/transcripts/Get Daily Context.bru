@@ -1,0 +1,92 @@
+meta {
+  name: Get Daily Context
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/context/daily?date=2026-01-14
+  body: none
+  auth: none
+}
+
+params:query {
+  date: 2026-01-14
+}
+
+vars:pre-request {
+  baseURL: http://localhost:4000
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response has success field", function() {
+    expect(res.getBody()).to.have.property('success', true);
+  });
+}
+
+docs {
+  # Get Daily Context
+  
+  **Endpoint:** `GET /api/transcripts/context/daily`
+  
+  Retrieves structured transcript context for an entire day, organized by hour segments.
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | date | string | Yes | Date in YYYY-MM-DD format |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Daily context retrieved",
+    "data": {
+      "date": "2026-01-14",
+      "segments": [
+        {
+          "hour": 8,
+          "chunks": [
+            {
+              "text": "I went to the gym...",
+              "timestamp": "2026-01-14T08:15:00.000Z",
+              "chunkNumber": 1,
+              "sentiment": "positive",
+              "topics": ["gym", "workout", "morning"]
+            }
+          ],
+          "stats": {
+            "wordCount": 150,
+            "sentiment": {
+              "positive": 3,
+              "neutral": 1,
+              "negative": 0
+            }
+          }
+        }
+      ],
+      "totalChunks": 45,
+      "totalWords": 2340
+    }
+  }
+  ```
+  
+  ## Use Cases
+  
+  - AI agent context retrieval
+  - Daily activity review
+  - Conversation analysis
+  - Time-based filtering
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Returns all transcript chunks for the specified day
+  - Organized by hour segments for easy navigation
+}

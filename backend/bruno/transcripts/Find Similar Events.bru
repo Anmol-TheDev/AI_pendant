@@ -1,0 +1,86 @@
+meta {
+  name: Find Similar Events
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/context/similar?chunkId=679f1f77bcf86cd799439012&limit=10
+  body: none
+  auth: none
+}
+
+params:query {
+  chunkId: 679f1f77bcf86cd799439012
+  limit: 10
+}
+
+docs {
+  # Find Similar Events
+  
+  **Endpoint:** `GET /api/transcripts/context/similar`
+  
+  Finds transcript chunks that are semantically similar to a given chunk.
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | chunkId | string | Yes | MongoDB ObjectId of the source chunk |
+  | limit | number | No | Max results (1-50, default: 10) |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Similar events found",
+    "data": {
+      "sourceChunk": {
+        "id": "679f1f77bcf86cd799439012",
+        "text": "I went to the gym this morning...",
+        "timestamp": "2026-01-14T08:15:00.000Z"
+      },
+      "chunks": [
+        {
+          "id": "679f1f77bcf86cd799439013",
+          "text": "Great workout session at the gym...",
+          "score": 0.89,
+          "timestamp": "2026-01-13T07:30:00.000Z",
+          "chunkNumber": 3
+        },
+        {
+          "id": "679f1f77bcf86cd799439014",
+          "text": "Morning exercise routine completed...",
+          "score": 0.84,
+          "timestamp": "2026-01-12T08:00:00.000Z",
+          "chunkNumber": 2
+        }
+      ]
+    }
+  }
+  ```
+  
+  ## Use Cases
+  
+  - Find recurring patterns
+  - Identify similar conversations
+  - Track topic evolution over time
+  - Discover related moments
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Uses vector similarity from ChromaDB
+  - Excludes the source chunk from results
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains sourceChunk", function() {
+    expect(res.getBody().data).to.have.property('sourceChunk');
+  });
+}

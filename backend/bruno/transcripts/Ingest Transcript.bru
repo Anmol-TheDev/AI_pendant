@@ -1,0 +1,88 @@
+meta {
+  name: Ingest Transcript
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseURL}}/api/transcripts/ingest
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": "I went to the gym this morning and had a great workout. Feeling energized and ready for the day!",
+    "timestamp": "2026-01-14T08:15:00.000Z",
+    "chunkNumber": 1
+  }
+}
+
+vars:pre-request {
+  baseURL: http://localhost:4000
+}
+
+tests {
+  test("Status code is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Response has success field", function() {
+    expect(res.getBody()).to.have.property('success', true);
+  });
+  
+  test("Response contains chunkId", function() {
+    expect(res.getBody().data).to.have.property('chunkId');
+  });
+}
+
+docs {
+  # Ingest Transcript Chunk
+  
+  **Endpoint:** `POST /api/transcripts/ingest`
+  
+  Ingests a transcript chunk (10-20 seconds of text) from an external transcription service.
+  
+  ## Request Body
+  
+  | Field | Type | Required | Description |
+  |-------|------|----------|-------------|
+  | text | string | Yes | Transcript text (max 5000 chars) |
+  | timestamp | string (ISO 8601) | Yes | Time when the audio was recorded |
+  | chunkNumber | number | No | Optional sequential chunk number |
+  
+  ## Process Flow
+  
+  1. Resolves/creates daily chatroom
+  2. Resolves/creates hourly segment bucket
+  3. Runs NLP analysis (sentiment + topics)
+  4. Generates embedding vector
+  5. Stores chunk in MongoDB
+  6. Stores embedding in ChromaDB
+  7. Updates segment statistics
+  
+  ## Response
+  
+  ```json
+  {
+    "success": true,
+    "message": "Transcript chunk ingested successfully",
+    "data": {
+      "chunkId": "679f1f77bcf86cd799439012",
+      "chatroomId": "679f1f77bcf86cd799439013",
+      "segmentId": "679f1f77bcf86cd799439014",
+      "embeddingId": "679f1f77bcf86cd799439012",
+      "chunkNumber": 1
+    }
+  }
+  ```
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Automatically creates chatroom (1 per day)
+  - Automatically creates segment (1 per hour)
+  - Sentiment: positive, neutral, or negative
+  - Topics: extracted using NLP/LLM
+  - ChunkNumber is optional but recommended for ordering
+}

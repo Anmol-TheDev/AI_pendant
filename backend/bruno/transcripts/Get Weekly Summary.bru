@@ -1,0 +1,92 @@
+meta {
+  name: Get Weekly Summary
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/summary/weekly?endDate=2026-01-14
+  body: none
+  auth: none
+}
+
+params:query {
+  endDate: 2026-01-14
+}
+
+docs {
+  # Get Weekly Summary
+  
+  **Endpoint:** `GET /api/transcripts/summary/weekly`
+  
+  Generates an AI-powered summary of a week's transcripts (7 days ending on endDate).
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | endDate | string | Yes | End date in YYYY-MM-DD format |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Weekly summary generated",
+    "data": {
+      "startDate": "2026-01-08",
+      "endDate": "2026-01-14",
+      "summary": "This week showed a consistent pattern of morning workouts and productive work sessions. The team made significant progress on the project with multiple collaborative meetings. Weekend activities included social gatherings and personal development time.",
+      "dailySummaries": [
+        {
+          "date": "2026-01-14",
+          "summary": "...",
+          "highlights": ["..."],
+          "topTopics": ["gym", "work"],
+          "sentiment": "positive",
+          "wordCount": 2340
+        }
+      ],
+      "trends": [
+        "Consistent morning exercise routine",
+        "Increased team collaboration",
+        "Focus on project deadlines",
+        "Balance between work and personal time"
+      ],
+      "topTopics": ["work", "gym", "meeting", "project", "team", "weekend"]
+    }
+  }
+  ```
+  
+  ## Features
+  
+  - Aggregates 7 days of data
+  - Identifies weekly trends and patterns
+  - Includes all daily summaries
+  - Top topics across the week
+  - LLM-generated cohesive narrative
+  
+  ## Use Cases
+  
+  - Weekly review and reflection
+  - Progress tracking over time
+  - Pattern identification
+  - Long-term memory assistance
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Uses Gemini AI for summary generation
+  - Processes 7 days ending on the specified date
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains weekly summary", function() {
+    expect(res.getBody().data).to.have.property('summary');
+    expect(res.getBody().data).to.have.property('dailySummaries');
+  });
+}

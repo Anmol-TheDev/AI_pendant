@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: audio-transcription-service
+    runtime: docker
+    plan: starter
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_MODEL_ID
+        value: scribe_v2
+      - key: BACKEND_URL
+        value: http://localhost:8000
+      - key: BACKEND_ENDPOINT
+        value: /daily-context/add
+      - key: MAX_RETRIES
+        value: 3
+      - key: WORKER_COUNT
+        value: 4
+      - key: MAX_QUEUE_SIZE
+        value: 1000
+      - key: SAMPLE_RATE
+        value: 16000
+    healthCheckPath: /health
+    autoDeploy: true

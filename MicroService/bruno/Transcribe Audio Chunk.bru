@@ -1,0 +1,74 @@
+meta {
+  name: Transcribe Audio Chunk
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/transcribe-chunk
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  audio_file: @file(/home/anmol/Music/10-1-countdown-65385.mp3)
+  chunk_number: 1
+  time: 2026-01-13T10:30:00Z
+}
+
+vars:pre-request {
+  base_url: http://localhost:5060
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("Response has status field", function() {
+    expect(res.body.status).to.equal("completed");
+  });
+  
+  test("Response has transcript text", function() {
+    expect(res.body.text).to.be.a('string');
+    expect(res.body.text.length).to.be.greaterThan(0);
+  });
+  
+  test("Response has chunk number", function() {
+    expect(res.body.chunk).to.be.a('number');
+  });
+}
+
+docs {
+  # Transcribe Audio Chunk (Synchronous)
+  
+  Upload an audio chunk for transcription processing and get the transcript immediately.
+  
+  ## Parameters
+  - **audio_file** (file, required): Audio file in any format (WAV, MP3, etc.)
+  - **chunk_number** (integer, required): Sequence number of the chunk
+  - **time** (string, required): ISO 8601 timestamp or Unix timestamp
+  
+  ## Processing Pipeline
+  1. Noise reduction
+  2. Silence removal (VAD)
+  3. Re-encode to 16kHz mono WAV
+  4. Send to ElevenLabs API
+  5. Return transcript immediately
+  6. Callback to backend asynchronously
+  
+  ## Expected Response (200 OK)
+  ```json
+  {
+    "status": "completed",
+    "chunk": 1,
+    "text": "This is the transcribed text from the audio",
+    "time": "2026-01-13T10:30:00Z"
+  }
+  ```
+  
+  ## Notes
+  - Returns transcript immediately (synchronous)
+  - Backend callback happens asynchronously
+  - Processing time depends on audio length (typically 2-10 seconds)
+}

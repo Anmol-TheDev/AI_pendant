@@ -1,0 +1,84 @@
+meta {
+  name: Get Hourly Context
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/context/hour?date=2026-01-14&hour=14
+  body: none
+  auth: none
+}
+
+params:query {
+  date: 2026-01-14
+  hour: 14
+}
+
+docs {
+  # Get Hourly Context
+  
+  **Endpoint:** `GET /api/transcripts/context/hour`
+  
+  Retrieves transcript chunks for a specific hour of a specific day.
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | date | string | Yes | Date in YYYY-MM-DD format |
+  | hour | number | Yes | Hour (0-23) |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Hourly context retrieved",
+    "data": {
+      "date": "2026-01-14",
+      "hour": 14,
+      "chunks": [
+        {
+          "id": "679f1f77bcf86cd799439012",
+          "text": "Had lunch with the team...",
+          "timestamp": "2026-01-14T14:05:00.000Z",
+          "chunkNumber": 5,
+          "sentiment": "positive",
+          "topics": ["lunch", "team", "meeting"]
+        }
+      ],
+      "stats": {
+        "wordCount": 320,
+        "sentiment": {
+          "positive": 5,
+          "neutral": 2,
+          "negative": 1
+        }
+      }
+    }
+  }
+  ```
+  
+  ## Use Cases
+  
+  - Focused time-range analysis
+  - Hour-by-hour review
+  - Detailed segment inspection
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Returns chunks sorted by timestamp
+  - Useful for detailed time-based analysis
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response has hour field", function() {
+    expect(res.getBody().data).to.have.property('hour');
+  });
+}

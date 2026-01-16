@@ -1,0 +1,57 @@
+meta {
+  name: Transcribe Audio Chunk (Async)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/transcribe-chunk/async
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  audio_file: @file(/path/to/audio.wav)
+  chunk_number: 1
+  time: 2026-01-13T10:30:00Z
+}
+
+docs {
+  # Transcribe Audio Chunk (Async Queue)
+  
+  Upload an audio chunk and enqueue for background processing.
+  Returns immediately without waiting for transcription.
+  
+  ## Parameters
+  - **audio_file** (file, required): Audio file in any format (WAV, MP3, etc.)
+  - **chunk_number** (integer, required): Sequence number of the chunk
+  - **time** (string, required): ISO 8601 timestamp or Unix timestamp
+  
+  ## Expected Response (202 Accepted)
+  ```json
+  {
+    "status": "queued",
+    "chunk": 1
+  }
+  ```
+  
+  ## Notes
+  - Returns immediately after enqueueing
+  - Processing happens asynchronously in background
+  - Check logs for processing status
+  - Use this endpoint for high-volume scenarios
+}
+
+tests {
+  test("Status is 202", function() {
+    expect(res.status).to.equal(202);
+  });
+  
+  test("Response has status field", function() {
+    expect(res.body.status).to.equal("queued");
+  });
+  
+  test("Response has chunk number", function() {
+    expect(res.body.chunk).to.be.a('number');
+  });
+}

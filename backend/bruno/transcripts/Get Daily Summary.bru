@@ -1,0 +1,82 @@
+meta {
+  name: Get Daily Summary
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/summary/daily?date=2026-01-14
+  body: none
+  auth: none
+}
+
+params:query {
+  date: 2026-01-14
+}
+
+docs {
+  # Get Daily Summary
+  
+  **Endpoint:** `GET /api/transcripts/summary/daily`
+  
+  Generates an AI-powered summary of a day's transcripts using LLM.
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | date | string | Yes | Date in YYYY-MM-DD format |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Daily summary generated",
+    "data": {
+      "date": "2026-01-14",
+      "summary": "The day started with a productive morning workout at the gym. Throughout the day, there were several team meetings discussing the upcoming project deadline. The afternoon was spent coding and reviewing pull requests. Evening conversations focused on planning for the weekend.",
+      "highlights": [
+        "Morning gym session with great energy",
+        "Team meeting about project milestones",
+        "Code review and development work",
+        "Weekend planning discussions"
+      ],
+      "topTopics": ["gym", "work", "meeting", "project", "weekend"],
+      "sentiment": "positive",
+      "wordCount": 2340
+    }
+  }
+  ```
+  
+  ## Features
+  
+  - LLM-generated summary (2-3 paragraphs)
+  - Key highlights extraction
+  - Top topics identification
+  - Overall sentiment analysis
+  - Word count statistics
+  
+  ## Use Cases
+  
+  - Daily activity review
+  - Journal generation
+  - Progress tracking
+  - Memory recall assistance
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Uses Gemini AI for summary generation
+  - Processes all chunks from the specified day
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains summary", function() {
+    expect(res.getBody().data).to.have.property('summary');
+  });
+}

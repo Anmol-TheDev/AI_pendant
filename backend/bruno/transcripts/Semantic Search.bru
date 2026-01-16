@@ -1,0 +1,95 @@
+meta {
+  name: Semantic Search
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/context/search?query=gym workout&date=2026-01-14&limit=10
+  body: none
+  auth: none
+}
+
+params:query {
+  query: gym workout
+  date: 2026-01-14
+  limit: 10
+}
+
+docs {
+  # Semantic Search
+  
+  **Endpoint:** `GET /api/transcripts/context/search`
+  
+  Performs semantic similarity search across transcript chunks using vector embeddings.
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | query | string | Yes | Search query text |
+  | date | string | No | Filter by specific date (YYYY-MM-DD) |
+  | limit | number | No | Max results (1-100, default: 10) |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Semantic search completed",
+    "data": {
+      "query": "gym workout",
+      "chunks": [
+        {
+          "id": "679f1f77bcf86cd799439012",
+          "text": "I went to the gym this morning...",
+          "score": 0.92,
+          "timestamp": "2026-01-14T08:15:00.000Z",
+          "chunkNumber": 1,
+          "sentiment": "positive",
+          "topics": ["gym", "workout", "morning"]
+        },
+        {
+          "id": "679f1f77bcf86cd799439013",
+          "text": "Planning to hit the gym after work...",
+          "score": 0.87,
+          "timestamp": "2026-01-14T16:30:00.000Z",
+          "chunkNumber": 15,
+          "sentiment": "neutral",
+          "topics": ["gym", "planning", "work"]
+        }
+      ]
+    }
+  }
+  ```
+  
+  ## Features
+  
+  - Vector similarity search (cosine similarity)
+  - Semantic understanding (not just keyword matching)
+  - Optional date filtering
+  - Ranked by relevance score (0-1)
+  
+  ## Use Cases
+  
+  - Find conversations about specific topics
+  - Retrieve contextually similar moments
+  - AI agent knowledge retrieval
+  
+  ## Notes
+  
+  - No authentication required (single user system)
+  - Uses ChromaDB for vector search
+  - Results sorted by similarity score
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains chunks array", function() {
+    expect(res.getBody().data).to.have.property('chunks');
+    expect(res.getBody().data.chunks).to.be.an('array');
+  });
+}

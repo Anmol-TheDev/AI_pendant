@@ -1,0 +1,76 @@
+meta {
+  name: Get User Chatrooms
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseURL}}/api/transcripts/chatrooms?userId=679f1f77bcf86cd799439011&limit=30
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: 679f1f77bcf86cd799439011
+  limit: 30
+}
+
+docs {
+  # Get User Chatrooms
+  
+  **Endpoint:** `GET /api/transcripts/chatrooms`
+  
+  Retrieves the user's transcript chatroom history (one chatroom per day).
+  
+  ## Query Parameters
+  
+  | Parameter | Type | Required | Description |
+  |-----------|------|----------|-------------|
+  | userId | string | Yes | MongoDB ObjectId of the user |
+  | limit | number | No | Max results (default: 30) |
+  
+  ## Response Structure
+  
+  ```json
+  {
+    "success": true,
+    "message": "Chatrooms retrieved",
+    "data": {
+      "chatrooms": [
+        {
+          "_id": "679f1f77bcf86cd799439013",
+          "userId": "679f1f77bcf86cd799439011",
+          "date": "2026-01-12",
+          "createdAt": "2026-01-12T00:00:00.000Z",
+          "updatedAt": "2026-01-12T23:45:00.000Z"
+        },
+        {
+          "_id": "679f1f77bcf86cd799439014",
+          "userId": "679f1f77bcf86cd799439011",
+          "date": "2026-01-11",
+          "createdAt": "2026-01-11T00:00:00.000Z",
+          "updatedAt": "2026-01-11T22:30:00.000Z"
+        }
+      ]
+    }
+  }
+  ```
+  
+  ## Use Cases
+  
+  - View available transcript days
+  - Navigate user's history
+  - Check data availability
+  - List active recording days
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Response contains chatrooms array", function() {
+    expect(res.getBody().data).to.have.property('chatrooms');
+    expect(res.getBody().data.chatrooms).to.be.an('array');
+  });
+}

@@ -1,0 +1,43 @@
+meta {
+  name: Transcribe Multiple Chunks
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/transcribe-chunk
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  audio_file: @file(/path/to/audio_chunk_2.wav)
+  chunk_number: 2
+  time: 2026-01-13T10:30:05Z
+}
+
+docs {
+  # Transcribe Multiple Chunks
+  
+  Example for uploading chunk #2. Chunks are processed in order based on chunk_number.
+  
+  ## Chunk Ordering
+  - Lower chunk_number = higher priority
+  - Chunks are processed sequentially per session
+  - Multiple chunks can be uploaded simultaneously
+  
+  ## Time Format Examples
+  - ISO 8601: `2026-01-13T10:30:00Z`
+  - Unix timestamp: `1705142400`
+  - With timezone: `2026-01-13T10:30:00+05:30`
+}
+
+tests {
+  test("Status is 202", function() {
+    expect(res.status).to.equal(202);
+  });
+  
+  test("Chunk number matches request", function() {
+    expect(res.body.chunk).to.equal(2);
+  });
+}
