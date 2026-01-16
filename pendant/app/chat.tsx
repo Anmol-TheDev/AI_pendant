@@ -32,6 +32,7 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [input, setInput] = useState("");
   const [historyMessages, setHistoryMessages] = useState<ChatMessage[]>([]);
+  const [chatroomInfo, setChatroomInfo] = useState<any>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -88,17 +89,43 @@ export default function ChatScreen() {
   const loadHistoryMessages = async () => {
     try {
       if (!id) return;
-      const msgs = await api.getChatroomMessages(id);
-      // Convert to unified format
-      const chatMessages: ChatMessage[] = msgs.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        role: msg.role === 'system' ? 'assistant' : msg.role,
-        timestamp: msg.timestamp,
-      }));
-      setHistoryMessages(chatMessages);
+      
+      console.log('📜 Loading history for chatroom:', id);
+      
+      // First, get chatroom info
+      const chatroomData = await api.getChatroomById(id);
+      if (chatroomData) {
+        setChatroomInfo(chatroomData);
+        console.log('✅ Loaded chatroom:', chatroomData.name);
+      }
+      
+      // Try to fetch messages using the simple endpoint first
+      // Even though it's marked as broken, let's try it
+      try {
+        const msgs = await api.getChatroomMessages(id, 100);
+        
+        if (msgs && msgs.length > 0) {
+          console.log('✅ Loaded', msgs.length, 'messages from history');
+          const chatMessages: ChatMessage[] = msgs.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            role: msg.role === 'system' ? 'assistant' : msg.role,
+            timestamp: msg.timestamp,
+          }));
+          setHistoryMessages(chatMessages);
+          return;
+        }
+      } catch (msgError) {
+        console.warn('⚠️ Message endpoint failed:', msgError);
+      }
+      
+      // Messages endpoint is broken, show empty state
+      console.log('❌ Message endpoint unavailable');
+      setHistoryMessages([]);
+      
     } catch (e) {
-      console.error(e);
+      console.error('❌ Error loading history:', e);
+      setHistoryMessages([]);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -233,27 +260,84 @@ export default function ChatScreen() {
           keyboardDismissMode="interactive"
         >
           {isLoading ? (
-            <ActivityIndicator className="mt-4" />
+            <View className="flex-1 justify-center items-center mt-20">
+              <ActivityIndicator size="large" />
+              <Text className="text-muted-foreground mt-4">Loading chat history...</Text>
+            </View>
           ) : (
             <>
-              {messages.map((msg, index) => (
-                <View
-                  key={msg.id || index}
-                  className={`flex-row mb-6 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {msg.role === "assistant" && (
-                    <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
-                      <Bot size={16} color="white" />
+              {/* Chatroom Info Card (History View Only) */}
+              {isHistoryView && chatroomInfo && (
+                <View className="mb-6 bg-card border border-border rounded-xl p-4">
+                  <Text className="text-lg font-semibold text-foreground mb-2">
+                    {chatroomInfo.name}
+                  </Text>
+                  <Text className="text-sm text-muted-foreground mb-3">
+                    {chatroomInfo.description}
+                  </Text>
+                  
+                  <View className="flex-row items-center gap-4 mb-2">
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-xs text-muted-foreground">Messages:</Text>
+                      <Text className="text-xs font-semibold text-foreground">
+                        {chatroomInfo.stats.totalMessages}
+                      </Text>
                     </View>
+                    
+                    {chatroomInfo.stats.lastMessageAt && (
+                      <View className="flex-row items-center gap-1">
+                        <Text className="text-xs text-muted-foreground">Last:</Text>
+                        <Text className="text-xs font-semibold text-foreground">
+                          {new Date(chatroomInfo.stats.lastMessageAt).toLocaleString()}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View className="mt-2 pt-2 border-t border-border">
+                    <Text className="text-[10px] text-muted-foreground font-mono">
+                      ID: {chatroomInfo.id}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              
+              {messages.length === 0 && isHistoryView ? (
+                <View className="flex-1 justify-center items-center mt-20">
+                  <Bot size={48} color="#9CA3AF" />
+                  <Text className="text-muted-foreground mt-4 text-center font-semibold">
+                    No messages available
+                  </Text>
+                  <Text className="text-xs text-muted-foreground mt-2 text-center px-8">
+                    The message history endpoint is currently unavailable.
+                    Please check the backend logs.
+                  </Text>
+                  {chatroomInfo && (
+                    <Text className="text-xs text-primary mt-4">
+                      Expected {chatroomInfo.stats.totalMessages} messages
+                    </Text>
                   )}
+                </View>
+              ) : (
+                <>
+                  {messages.map((msg, index) => (
+                    <View
+                      key={msg.id || index}
+                      className={`flex-row mb-6 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      {msg.role === "assistant" && (
+                        <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
+                          <Bot size={16} color="white" />
+                        </View>
+                      )}
 
-                  <View
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "bg-blue-600 rounded-tr-sm"
-                        : "bg-secondary rounded-tl-sm"
-                    }`}
-                  >
+                      <View
+                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                          msg.role === "user"
+                            ? "bg-blue-600 rounded-tr-sm"
+                            : "bg-secondary rounded-tl-sm"
+                        }`}
+                      >
                     <Text
                       className={`text-base leading-6 ${msg.role === "user" ? "text-white" : "text-foreground"}`}
                     >
@@ -267,37 +351,39 @@ export default function ChatScreen() {
                         minute: "2-digit",
                       })}
                     </Text>
-                  </View>
-                </View>
-              ))}
+                      </View>
+                    </View>
+                  ))}
 
-              {/* Typing Indicator */}
-              {isTyping && !streamingText && (
-                <View className="flex-row mb-6 justify-start">
-                  <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
-                    <Bot size={16} color="white" />
-                  </View>
-                  <View className="rounded-2xl px-4 py-3 bg-secondary rounded-tl-sm">
-                    <Text className="text-muted-foreground text-sm">
-                      AI is typing...
-                    </Text>
-                  </View>
-                </View>
-              )}
+                  {/* Typing Indicator */}
+                  {isTyping && !streamingText && (
+                    <View className="flex-row mb-6 justify-start">
+                      <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
+                        <Bot size={16} color="white" />
+                      </View>
+                      <View className="rounded-2xl px-4 py-3 bg-secondary rounded-tl-sm">
+                        <Text className="text-muted-foreground text-sm">
+                          AI is typing...
+                        </Text>
+                      </View>
+                    </View>
+                  )}
 
-              {/* Streaming Response Bubble */}
-              {streamingText && (
-                <View className="flex-row mb-6 justify-start">
-                  <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
-                    <Bot size={16} color="white" />
-                  </View>
-                  <View className="max-w-[80%] rounded-2xl px-4 py-3 bg-secondary rounded-tl-sm">
-                    <Text className="text-base leading-6 text-foreground">
-                      {streamingText}
-                      <Text className="text-primary"> ●</Text>
-                    </Text>
-                  </View>
-                </View>
+                  {/* Streaming Response Bubble */}
+                  {streamingText && (
+                    <View className="flex-row mb-6 justify-start">
+                      <View className="w-8 h-8 rounded-full bg-green-500 items-center justify-center mr-2 mt-1">
+                        <Bot size={16} color="white" />
+                      </View>
+                      <View className="max-w-[80%] rounded-2xl px-4 py-3 bg-secondary rounded-tl-sm">
+                        <Text className="text-base leading-6 text-foreground">
+                          {streamingText}
+                          <Text className="text-primary"> ●</Text>
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}

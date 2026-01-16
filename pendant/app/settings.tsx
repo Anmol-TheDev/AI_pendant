@@ -1,4 +1,5 @@
 import { View, ScrollView, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
@@ -21,8 +22,9 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background mt-6">
-      <View className="p-6 gap-8">
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView className="flex-1">
+        <View className="p-6 gap-8">
         <View>
           <Text className="text-3xl font-bold">Settings</Text>
           <Text className="text-muted-foreground">Manage your account</Text>
@@ -88,6 +90,7 @@ export default function SettingsScreen() {
           <Text className="text-destructive">Sign Out</Text>
         </Button>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

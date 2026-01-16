@@ -16,7 +16,6 @@ import {
   MessageSquarePlus,
   History,
   Settings,
-  Search,
 } from "lucide-react-native";
 import { Icon } from "@/components/ui/icon";
 import { useFocusEffect } from "expo-router";
@@ -145,23 +144,6 @@ export default function HomeScreen() {
               </Text>
               <Text className="text-sm text-muted-foreground">
                 Check past conversations
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row items-center p-4 bg-card border border-border rounded-xl gap-4 active:opacity-90"
-            onPress={() => router.push("/search")}
-          >
-            <View className="p-3 bg-secondary rounded-full">
-              <Icon as={Search} className="size-6 text-secondary-foreground" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-lg font-semibold text-foreground">
-                Search Memories
-              </Text>
-              <Text className="text-sm text-muted-foreground">
-                Find specific topics in transcripts
               </Text>
             </View>
           </TouchableOpacity>

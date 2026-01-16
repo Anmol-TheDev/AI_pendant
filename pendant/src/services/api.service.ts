@@ -16,16 +16,57 @@ export interface Message {
   role: 'user' | 'system' | 'assistant';
   content: string;
   timestamp: string;
+  messageType?: 'user' | 'system' | 'transcription';
 }
 
 export interface Chatroom {
   id: string;
-  date: string; // YYYY-MM-DD
-  userId: string;
+  name: string;
+  description: string;
+  date: string;
+  isActive: boolean;
+  stats: {
+    totalMessages: number;
+    lastMessageAt?: string;
+    participantCount?: number;
+  };
+  lastMessage?: {
+    id: string;
+    content: string;
+    messageType: string;
+    createdAt: string;
+  };
+  // Legacy fields for backward compatibility
+  userId?: string;
   summary?: string;
+  messages?: Message[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PaginatedMessages {
   messages: Message[];
-  created_at: string;
-  updated_at: string;
+  pagination: {
+    hasMore: boolean;
+    nextCursor: string | null;
+    totalCount: number;
+    currentCount: number;
+  };
+}
+
+export interface ChatroomEnterResponse {
+  chatroom: Chatroom;
+  context: {
+    hasContext: boolean;
+    totalChunks: number;
+    totalWords: number;
+    timeRange?: {
+      start: string;
+      end: string;
+    };
+  };
+  systemPrompt: string;
+  aiResponse?: string;
 }
 
 export interface TranscriptChunk {
@@ -52,24 +93,17 @@ export interface ContextItem {
 // API Functions
 
 export const api = {
-  // Chatroom - No userId needed (backend uses default)
+  // Chatroom APIs
+  // ✅ Working: getTodayChatroom, getChatroomById, enterChatroom
+  // ⚠️  Partial: getAllChatrooms (works without params, fails with pagination params - using client-side pagination)
+  // ❌ Broken: getChatroomMessages, getPaginatedMessages (server errors)
+  
   getTodayChatroom: async (): Promise<Chatroom | null> => {
     try {
       const res = await fetch(`${BACKEND_URL}/chatrooms/today`);
       if (!res.ok) throw new Error('Failed to fetch chatroom');
       const response = await res.json();
-      
-      // Backend returns { success, message, data: { id, name, date, ... } }
-      const data = response.data;
-      return {
-        id: data.id,
-        date: data.date,
-        userId: '', // Not used in backend
-        summary: '',
-        messages: [],
-        created_at: data.date,
-        updated_at: data.date,
-      };
+      return response.data;
     } catch (e) {
       console.error('Error fetching today chatroom', e);
       toast.error("Failed to load today's chat");
@@ -77,26 +111,133 @@ export const api = {
     }
   },
 
-  getChatroomMessages: async (id: string, limit: number = 50): Promise<Message[]> => {
+  getChatroomById: async (chatroomId: string): Promise<Chatroom | null> => {
     try {
-      const res = await fetch(`${BACKEND_URL}/chatrooms/${id}/messages/paginated?limit=${limit}`);
+      const res = await fetch(`${BACKEND_URL}/chatrooms/${chatroomId}`);
+      if (!res.ok) throw new Error('Failed to fetch chatroom');
+      const response = await res.json();
+      return response.data;
+    } catch (e) {
+      console.error('Error fetching chatroom', e);
+      toast.error("Failed to load chatroom");
+      return null;
+    }
+  },
+
+  getAllChatrooms: async (page: number = 1, limit: number = 20): Promise<{ chatrooms: Chatroom[]; pagination: any } | null> => {
+    try {
+      // Note: Endpoint works WITHOUT query params, but FAILS with pagination params
+      // This is a backend bug - using workaround
+      const res = await fetch(`${BACKEND_URL}/chatrooms`);
+      if (!res.ok) throw new Error('Failed to fetch chatrooms');
+      const response = await res.json();
+      
+      if (!response.data?.chatrooms) {
+        return { chatrooms: [], pagination: { page: 1, limit, total: 0, hasMore: false } };
+      }
+      
+      // Manual pagination on client side
+      const allChatrooms = response.data.chatrooms;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedChatrooms = allChatrooms.slice(startIndex, endIndex);
+      
+      return {
+        chatrooms: paginatedChatrooms,
+        pagination: {
+          page,
+          limit,
+          total: allChatrooms.length,
+          hasMore: endIndex < allChatrooms.length,
+        },
+      };
+    } catch (e) {
+      console.error('Error fetching chatrooms', e);
+      toast.error("Failed to load chatrooms");
+      return null;
+    }
+  },
+
+  getChatroomMessages: async (chatroomId: string, limit: number = 50): Promise<Message[]> => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/chatrooms/${chatroomId}/messages?limit=${limit}`);
       if (!res.ok) throw new Error('Failed to fetch messages');
       const response = await res.json();
       
-      // Backend returns { success, message, data: { messages: [...], pagination: {...} } }
-      const messages = response.data?.messages || [];
-      
       // Map backend message format to frontend format
-      return messages.map((msg: any) => ({
+      return (response.data || []).map((msg: any) => ({
         id: msg.id,
         role: msg.messageType === 'user' ? 'user' : 'assistant',
         content: msg.content,
         timestamp: msg.createdAt,
+        messageType: msg.messageType,
       }));
     } catch (e) {
       console.error('Error fetching messages', e);
       toast.error("Failed to load messages");
       return [];
+    }
+  },
+
+  getPaginatedMessages: async (
+    chatroomId: string,
+    limit: number = 50,
+    cursor?: string
+  ): Promise<PaginatedMessages | null> => {
+    try {
+      let url = `${BACKEND_URL}/chatrooms/${chatroomId}/messages/paginated?limit=${limit}`;
+      if (cursor) {
+        url += `&cursor=${cursor}`;
+      }
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch messages');
+      const response = await res.json();
+      
+      // Map backend message format to frontend format
+      const messages = (response.data?.messages || []).map((msg: any) => ({
+        id: msg.id,
+        role: msg.messageType === 'user' ? 'user' : 'assistant',
+        content: msg.content,
+        timestamp: msg.createdAt,
+        messageType: msg.messageType,
+      }));
+      
+      return {
+        messages,
+        pagination: response.data?.pagination || {
+          hasMore: false,
+          nextCursor: null,
+          totalCount: 0,
+          currentCount: 0,
+        },
+      };
+    } catch (e) {
+      console.error('Error fetching paginated messages', e);
+      toast.error("Failed to load messages");
+      return null;
+    }
+  },
+
+  enterChatroom: async (
+    chatroomId: string,
+    userId?: string,
+    message?: string
+  ): Promise<ChatroomEnterResponse | null> => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/chatrooms/${chatroomId}/enter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to enter chatroom');
+      const response = await res.json();
+      return response.data;
+    } catch (e) {
+      console.error('Error entering chatroom', e);
+      toast.error("Failed to enter chatroom");
+      return null;
     }
   },
 
@@ -152,27 +293,25 @@ export const api = {
 
   getUserChatrooms: async (limit: number = 30): Promise<Chatroom[]> => {
     try {
-      // Fetch all chatrooms (backend handles pagination internally)
+      // Note: The endpoint without query params works, but with pagination params it fails
       const res = await fetch(`${BACKEND_URL}/chatrooms`);
-      if (!res.ok) throw new Error("Failed to fetch history");
+      
+      if (!res.ok) {
+        console.warn('Chatrooms endpoint returned error');
+        return [];
+      }
+      
       const response = await res.json();
       
-      // Backend returns { success, message, data: { chatrooms: [...], pagination: {...} } }
-      const chatrooms = response.data?.chatrooms || [];
+      if (!response.success || !response.data?.chatrooms) {
+        return [];
+      }
       
-      // Limit on client side if needed
-      return chatrooms.slice(0, limit).map((item: any) => ({
-        id: item.id,
-        date: item.date,
-        userId: item.userId || '',
-        summary: '', // Summary not included in chatroom list
-        messages: [],
-        created_at: item.createdAt || item.date || new Date().toISOString(),
-        updated_at: item.updatedAt || item.date || new Date().toISOString(),
-      }));
+      // Limit on client side since backend pagination is broken
+      const chatrooms = response.data.chatrooms || [];
+      return chatrooms.slice(0, limit);
     } catch (e) {
       console.error('Error fetching chatrooms', e);
-      toast.error("Failed to load history");
       return [];
     }
   },

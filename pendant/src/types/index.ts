@@ -15,9 +15,27 @@ export interface ChatMessage {
 
 export interface Chatroom {
   id: string;
-  title: string;
-  createdAt: Date;
-  updatedAt: Date;
+  name: string;
+  description: string;
+  date: string;
+  isActive: boolean;
+  stats: {
+    totalMessages: number;
+    lastMessageAt?: string;
+    participantCount?: number;
+  };
+  lastMessage?: {
+    id: string;
+    content: string;
+    messageType: string;
+    createdAt: string;
+  };
+  // Legacy fields for backward compatibility
+  title?: string;
+  userId?: string;
+  summary?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 // History Types
