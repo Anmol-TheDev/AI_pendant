@@ -1,14 +1,20 @@
 # consumer.py
 import redis
 import time
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # ================= CONFIG =================
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-QUEUE_NAME = "audio_queue:PASTE_SESSION_NAME_HERE"
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+QUEUE_NAME = os.getenv("QUEUE_NAME", "audio_queue:PASTE_SESSION_NAME_HERE")
 # =========================================
 
-r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 
 print("👂 Consumer started")
 print(f"🧵 Listening on queue: {QUEUE_NAME}\n")

@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Recorded audio files
+recorded_audio/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+ENV/
