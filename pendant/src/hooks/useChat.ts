@@ -36,7 +36,7 @@ interface UseChatReturn {
   isTyping: boolean;
   streamingText: string;
   sendMessage: (content: string, username?: string) => void;
-  connect: (serverUrl: string) => void;
+  connect: (serverUrl: string, options?: { query?: Record<string, any> }) => void;
   disconnect: () => void;
 }
 
@@ -47,8 +47,8 @@ export const useChat = (): UseChatReturn => {
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState('');
 
-  const connect = useCallback((serverUrl: string) => {
-    const socket = socketService.connect(serverUrl);
+  const connect = useCallback((serverUrl: string, options?: { query?: Record<string, any> }) => {
+    const socket = socketService.connect(serverUrl, options);
 
     // Debug: Listen to all events
     socket.onAny((eventName, ...args) => {

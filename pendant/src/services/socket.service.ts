@@ -6,11 +6,17 @@ class SocketService {
   private socket: Socket | null = null;
   private serverUrl: string = '';
 
-  connect(serverUrl: string): Socket {
+  connect(serverUrl: string, options?: { query?: Record<string, any> }): Socket {
     this.serverUrl = serverUrl;
     
     logger.info('🔌 Attempting to connect to:', serverUrl);
     
+    if (this.socket) {
+      logger.info('⚠️ Closing existng socket connection before reconnecting');
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
     this.socket = io(serverUrl, {
       transports: ['polling', 'websocket'], // Start with polling, upgrade to websocket
       reconnection: true,
@@ -21,6 +27,7 @@ class SocketService {
       autoConnect: true, // Auto connect on creation
       upgrade: true, // Allow transport upgrade
       rememberUpgrade: true, // Remember successful upgrade
+      query: options?.query,
     });
 
     this.setupListeners();

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { Icon } from "@/components/ui/icon";
 import { ArrowLeft, Calendar, TrendingUp } from "lucide-react-native";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { api } from "@/src/services/api.service";
@@ -20,11 +21,11 @@ export default function WeeklyHistoryScreen() {
     if (!userId) return;
     try {
       // Generate last 4 weeks end dates (Sundays)
-      const weeks = [];
+      const weeks: string[] = [];
       const today = new Date();
       // Adjust to last Sunday
       const lastSunday = new Date(
-        today.setDate(today.getDate() - today.getDay())
+        today.setDate(today.getDate() - today.getDay()),
       );
 
       for (let i = 0; i < 4; i++) {
@@ -33,24 +34,22 @@ export default function WeeklyHistoryScreen() {
         weeks.push(date.toISOString().split("T")[0]);
       }
 
-      const promises = weeks.map((date) =>
-        api.getWeeklySummary(date)
-      );
+      const promises = weeks.map((date) => api.getWeeklySummary(date));
       const results = await Promise.all(promises);
-      
+
       // Filter out nulls and map to expected format
       const validResults = results
         .filter((item) => item && item.summary)
         .map((item, index) => ({
           date: weeks[index],
           summary: item!.summary,
-          sentiment: 'positive', // Default sentiment
+          sentiment: "positive", // Default sentiment
           topTopics: item!.topTopics || [],
           trends: item!.trends || [],
           startDate: item!.startDate,
           endDate: item!.endDate,
         }));
-      
+
       setWeeklyHistory(validResults);
     } catch (error) {
       console.error("Failed to fetch weekly history", error);
@@ -111,8 +110,22 @@ export default function WeeklyHistoryScreen() {
 
       {/* Content */}
       {loading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" />
+        <View className="p-4">
+          {[1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              className="mb-4 p-4 border border-border rounded-xl bg-card"
+            >
+              <View className="flex-row items-center gap-2 mb-3">
+                <Skeleton className="h-6 w-40 rounded" />
+              </View>
+              <Skeleton className="h-24 w-full rounded-md" />
+              <View className="mt-3 flex-row gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </View>
+            </View>
+          ))}
         </View>
       ) : (
         <WeeklyTable

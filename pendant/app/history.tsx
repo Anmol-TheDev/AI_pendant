@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
 import { Icon } from "@/components/ui/icon";
 import { ArrowLeft, Calendar, TrendingUp } from "lucide-react-native";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { api, Chatroom } from "@/src/services/api.service";
@@ -52,36 +53,21 @@ export default function HistoryScreen() {
         </View>
       </View>
 
-      {/* View Selector */}
-      <View className="flex-row gap-3 p-4">
-        <View className="flex-1 bg-primary rounded-xl p-4 shadow-sm">
-          <View className="flex-row items-center gap-2 mb-1">
-            <Icon as={Calendar} className="size-5 text-primary-foreground" />
-            <Text className="text-primary-foreground font-semibold">
-              Daily View
-            </Text>
-          </View>
-          <Text className="text-primary-foreground/80 text-xs">
-            Currently viewing
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          className="flex-1 bg-card border border-border rounded-xl p-4 active:opacity-70"
-          onPress={() => router.push("/weekly-history")}
-        >
-          <View className="flex-row items-center gap-2 mb-1">
-            <Icon as={TrendingUp} className="size-5 text-foreground" />
-            <Text className="text-foreground font-semibold">Weekly View</Text>
-          </View>
-          <Text className="text-muted-foreground text-xs">Tap to switch</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Content */}
       {loading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" />
+        <View className="p-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View
+              key={i}
+              className="mb-4 p-4 border border-border rounded-xl bg-card"
+            >
+              <View className="flex-row justify-between mb-2">
+                <Skeleton className="h-4 w-24 rounded" />
+                <Skeleton className="h-4 w-16 rounded" />
+              </View>
+              <Skeleton className="h-16 w-full rounded-md" />
+            </View>
+          ))}
         </View>
       ) : (
         <DailyTable

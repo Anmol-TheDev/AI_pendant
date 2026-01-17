@@ -1,9 +1,10 @@
 import React from "react";
 import { View } from "react-native";
 import { Text } from "@/components/ui/text";
-import { Summary } from "@/lib/api";
+import { Summary } from "@/src/services/api.service";
 import { SmileIcon } from "lucide-react-native";
 import { Icon } from "@/components/ui/icon";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DailySummaryCardProps {
   summary: Summary | null;
@@ -14,9 +15,24 @@ export function DailySummaryCard({ summary, loading }: DailySummaryCardProps) {
   if (loading) {
     return (
       <View className="bg-card border border-border rounded-xl p-4 gap-4">
-        <Text className="text-muted-foreground text-center">
-          Loading summary...
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Skeleton className="h-6 w-32 rounded" />
+          <Skeleton className="h-6 w-20 rounded" />
+        </View>
+        <View className="gap-2">
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-2/3 rounded" />
+        </View>
+        <View className="mt-2 gap-2">
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-full rounded" />
+        </View>
+        <View className="flex-row gap-2 mt-3">
+          <Skeleton className="h-6 w-16 rounded-md" />
+          <Skeleton className="h-6 w-20 rounded-md" />
+          <Skeleton className="h-6 w-14 rounded-md" />
+        </View>
       </View>
     );
   }
