@@ -363,7 +363,7 @@ export default function ChatScreen() {
                       </View>
                       <View className="rounded-2xl px-4 py-3 bg-secondary rounded-tl-sm">
                         <Text className="text-muted-foreground text-sm">
-                          AI is typing...
+                          ...
                         </Text>
                       </View>
                     </View>

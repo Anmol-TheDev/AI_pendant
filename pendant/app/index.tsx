@@ -12,6 +12,8 @@ import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { api, Summary } from "@/src/services/api.service";
 import { DailySummaryCard } from "@/components/features/home/DailySummaryCard";
+import { RecorderButton } from "@/components/features/home/RecorderButton";
+import { WiFiStatus } from "@/components/features/home/WiFiStatus";
 import {
   MessageSquarePlus,
   History,
@@ -80,22 +82,32 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text className="text-2xl font-bold text-foreground">
-              {getGreeting()}
-            </Text>
-            <Text className="text-muted-foreground">
-              Ready to capture your day?
-            </Text>
+        {/* Header with WiFi Status */}
+        <View className="gap-4">
+          <View className="flex-row justify-between items-center">
+            <View>
+              <Text className="text-2xl font-bold text-foreground">
+                {getGreeting()}
+              </Text>
+              <Text className="text-muted-foreground">
+                Ready to capture your day?
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/settings")}
+              className="p-2 bg-secondary/30 rounded-full"
+            >
+              <Icon as={Settings} className="size-6 text-foreground" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/settings")}
-            className="p-2 bg-secondary/30 rounded-full"
-          >
-            <Icon as={Settings} className="size-6 text-foreground" />
-          </TouchableOpacity>
+          
+          {/* WiFi Status */}
+          <WiFiStatus />
+        </View>
+
+        {/* Main Recorder Section */}
+        <View className="items-center py-8 bg-card/30 rounded-2xl border border-border/50">
+          <RecorderButton />
         </View>
 
         {/* Daily Summary */}
