@@ -8,14 +8,13 @@ import { Text } from "@/components/ui/text";
 import { useOAuth } from "@clerk/clerk-expo";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
-import { useWarmUpBrowser } from "@/src/hooks/useWarmUpBrowser";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen() {
-  useWarmUpBrowser();
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
+
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const [emailAddress, setEmailAddress] = React.useState("");
@@ -24,7 +23,9 @@ export default function SignUpScreen() {
   const [code, setCode] = React.useState("");
 
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      return;
+    }
 
     try {
       await signUp.create({
@@ -36,32 +37,39 @@ export default function SignUpScreen() {
 
       setPendingVerification(true);
     } catch (err: any) {
-      Alert.alert("Error", err.errors ? err.errors[0].message : err.message);
+      Alert.alert("Error", err.errors[0].message);
     }
   };
 
   const onPressVerify = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      return;
+    }
 
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code,
       });
 
-      await setActive({ session: completeSignUp.createdSessionId });
-      router.replace("/");
+      if (completeSignUp.status === "complete") {
+        await setActive({ session: completeSignUp.createdSessionId });
+        router.replace("/");
+      } else {
+        console.error(JSON.stringify(completeSignUp, null, 2));
+      }
     } catch (err: any) {
-      Alert.alert("Error", err.errors ? err.errors[0].message : err.message);
+      Alert.alert("Error", err.errors[0].message);
     }
   };
 
   const onGoogleSignUpPress = React.useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: AuthSession.makeRedirectUri({
-          path: "/(auth)/sign-up",
-        }),
-      });
+      const { createdSessionId, signIn, signUp, setActive } =
+        await startOAuthFlow({
+          redirectUrl: AuthSession.makeRedirectUri({
+            path: "/(auth)/sign-up",
+          }),
+        });
 
       if (createdSessionId) {
         setActive!({ session: createdSessionId });
@@ -75,26 +83,27 @@ export default function SignUpScreen() {
 
   return (
     <View className="flex-1 bg-background mt-6">
-          <View className="pt-12 px-6">
-            {/* Header */}
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-3xl font-bold">Pendant</Text>
-                <Text className="text-muted-foreground">Recording Dashboard</Text>
-              </View>
-            </View>
+      <View className="pt-12 px-6">
+        {/* Header */}
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-3xl font-bold">Pendant</Text>
+            <Text className="text-muted-foreground">Recording Dashboard</Text>
           </View>
-      <View className="gap-8 px-6 justify-center flex-1">
+        </View>
+      </View>
+      <View className="flex-1 justify-center px-6 bg-background">
         {!pendingVerification && (
-          <>
+          <View className="gap-8">
             <View>
               <Text className="text-3xl font-bold text-foreground">
                 Create account
               </Text>
               <Text className="text-muted-foreground mt-2">
-                Enter your details to get started
+                Sign up to get started
               </Text>
             </View>
+
             <View className="gap-4">
               <View className="gap-2">
                 <Text className="text-foreground font-medium">Email</Text>
@@ -114,6 +123,7 @@ export default function SignUpScreen() {
                   onChangeText={setPassword}
                 />
               </View>
+
               <Button onPress={onSignUpPress}>
                 <Text>Sign up</Text>
               </Button>
@@ -135,6 +145,7 @@ export default function SignUpScreen() {
                 <Text>Continue with Google</Text>
               </Button>
             </View>
+
             <View className="flex-row justify-center gap-1">
               <Text className="text-muted-foreground">
                 Already have an account?
@@ -143,19 +154,19 @@ export default function SignUpScreen() {
                 <Text className="text-primary font-bold">Sign in</Text>
               </Link>
             </View>
-          </>
+          </View>
         )}
-
         {pendingVerification && (
-          <>
+          <View className="gap-8">
             <View>
               <Text className="text-3xl font-bold text-foreground">
-                Verify email
+                Verify your email
               </Text>
               <Text className="text-muted-foreground mt-2">
                 Enter the verification code sent to your email
               </Text>
             </View>
+
             <View className="gap-4">
               <View className="gap-2">
                 <Text className="text-foreground font-medium">
@@ -163,15 +174,16 @@ export default function SignUpScreen() {
                 </Text>
                 <Input
                   value={code}
-                  placeholder="Code..."
+                  placeholder="Enter code..."
                   onChangeText={setCode}
                 />
               </View>
+
               <Button onPress={onPressVerify}>
                 <Text>Verify Email</Text>
               </Button>
             </View>
-          </>
+          </View>
         )}
       </View>
     </View>

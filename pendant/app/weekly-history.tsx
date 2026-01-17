@@ -34,11 +34,24 @@ export default function WeeklyHistoryScreen() {
       }
 
       const promises = weeks.map((date) =>
-        api.getWeeklySummary(date).then((res) => ({ date, ...res }))
+        api.getWeeklySummary(date)
       );
       const results = await Promise.all(promises);
-      // Filter out nulls or failures if any
-      setWeeklyHistory(results.filter((item) => item.summary));
+      
+      // Filter out nulls and map to expected format
+      const validResults = results
+        .filter((item) => item && item.summary)
+        .map((item, index) => ({
+          date: weeks[index],
+          summary: item!.summary,
+          sentiment: 'positive', // Default sentiment
+          topTopics: item!.topTopics || [],
+          trends: item!.trends || [],
+          startDate: item!.startDate,
+          endDate: item!.endDate,
+        }));
+      
+      setWeeklyHistory(validResults);
     } catch (error) {
       console.error("Failed to fetch weekly history", error);
     } finally {
